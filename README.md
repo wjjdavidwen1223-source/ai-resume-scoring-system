@@ -86,7 +86,7 @@ Given a dataset of candidates and job requirements, the system:
 ---
 
 ## 🤖 ML Extension
-This project includes a baseline supervised machine learning model using **Logistic Regression**.
+This project includes a baseline supervised machine learning model using Logistic Regression.
 
 The workflow includes:
 - preprocessing structured candidate features  
@@ -94,6 +94,9 @@ The workflow includes:
 - splitting data into training and test sets  
 - training a classification model to predict candidate fit  
 - evaluating performance using **accuracy, precision, and recall**  
+
+**Model Performance:**
+- Accuracy: ~0.80  
 
 This extension demonstrates the transition from **rule-based scoring → data-driven ML approach**.
 
