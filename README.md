@@ -3,7 +3,7 @@
 ## 📌 Overview
 This project is a Python-based system that evaluates candidate-job fit by transforming unstructured resume data into a structured scoring framework.
 
-It models candidate evaluation as a ranking and decision-making problem, enabling consistent, data-driven comparison across multiple candidates.
+It models candidate evaluation as a **ranking and classification problem**, enabling consistent, data-driven comparison across multiple candidates.
 
 ---
 
@@ -16,17 +16,17 @@ It models candidate evaluation as a ranking and decision-making problem, enablin
 ---
 
 ## ⚙️ Features
-- Processes and structures candidate data using Pandas  
+- Processes and structures candidate data using **Pandas**  
 - Matches candidate skills against job requirements  
-- Computes scores based on skill alignment and experience  
+- Computes scores based on **skill alignment and experience**  
 - Ranks candidates from strongest to weakest fit  
 - Produces standardized outputs for consistent evaluation  
 
 ---
 
 ## 🧮 Scoring Model
-- +2 points per matching required skill  
-- +1 point per year of relevant experience  
+- **+2 points** per matching required skill  
+- **+1 point** per year of relevant experience  
 
 ---
 
@@ -41,33 +41,38 @@ It models candidate evaluation as a ranking and decision-making problem, enablin
 ---
 
 ## 🧪 Real-World Validation
-- Evaluated system using 20+ real candidate profiles  
-- Tested across 50+ simulated scenarios  
+- Evaluated system using **20+ real candidate profiles**  
+- Tested across **50+ simulated scenarios**  
 - Identified edge cases such as:
   - Strong candidates under-ranked due to missing keywords  
   - Inconsistent resume formatting affecting evaluation  
-- Refined scoring logic to improve consistency and robustness  
+- Refined scoring logic to improve **consistency and robustness**  
 
 ---
 
 ## 🛠️ Tech Stack
 - Python  
 - Pandas  
+- scikit-learn  
 
 ---
 
 ## 📁 Project Structure
+
 resume-ranking-system/
-│── resume_scoring.py  
-│── data/  
-│   └── sample_candidates.csv  
-│── README.md  
+│── resume_scoring.py
+│── data/
+│ └── sample_candidates.csv
+│── README.md
+
 
 ---
 
 ## ▶️ How to Run
-pip install pandas  
-python resume_scoring.py  
+
+pip install pandas scikit-learn
+python resume_scoring.py
+
 
 ---
 
@@ -80,6 +85,20 @@ Given a dataset of candidates and job requirements, the system:
 
 ---
 
+## 🤖 ML Extension
+This project includes a baseline supervised machine learning model using **Logistic Regression**.
+
+The workflow includes:
+- preprocessing structured candidate features  
+- one-hot encoding categorical variables  
+- splitting data into training and test sets  
+- training a classification model to predict candidate fit  
+- evaluating performance using **accuracy, precision, and recall**  
+
+This extension demonstrates the transition from **rule-based scoring → data-driven ML approach**.
+
+---
+
 ## 📈 Impact
 - Standardizes candidate evaluation  
 - Reduces subjective bias in screening  
@@ -89,10 +108,10 @@ Given a dataset of candidates and job requirements, the system:
 ---
 
 ## 🔄 Future Improvements
-- Add supervised ML model (Logistic Regression, Random Forest)  
-- Improve feature engineering  
-- Integrate NLP for resume parsing  
-- Expand dataset for better evaluation  
+- Improve feature engineering for better predictive performance  
+- Integrate NLP for resume text parsing  
+- Expand dataset for more robust evaluation  
+- Explore advanced models (e.g., Random Forest, Gradient Boosting)  
 
 ---
 
@@ -104,17 +123,5 @@ This project demonstrates:
 
 ---
 
-## Demo
+## 📌 Demo
 See `resume_scoring.py` for a sample implementation and output.
-
-## 🤖 ML Extension
-This project was extended with a baseline supervised machine learning model using Logistic Regression.
-
-The workflow includes:
-- preprocessing structured candidate features
-- one-hot encoding categorical variables
-- splitting data into training and test sets
-- training a classification model to predict candidate fit
-- evaluating performance using accuracy, precision, and recall
-
-This extension demonstrates the transition from rule-based candidate scoring to a data-driven ML approach.
