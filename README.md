@@ -15,6 +15,22 @@ It models candidate evaluation as a **ranking and classification problem**, enab
 
 ---
 
+🗄️ Data Extraction (SQL Integration)
+
+Candidate data is first queried using SQL to simulate extraction from a structured database, then processed using Pandas.
+
+SELECT 
+  candidate_id,
+  skills,
+  years_experience,
+  job_required_skills
+FROM candidates
+WHERE years_experience IS NOT NULL;
+
+This step reflects how real-world systems retrieve and filter structured data before downstream processing.
+
+---
+
 ## ⚙️ Features
 - Processes and structures candidate data using **Pandas**  
 - Matches candidate skills against job requirements  
