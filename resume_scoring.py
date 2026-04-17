@@ -1,7 +1,7 @@
 import pandas as pd
 
-INTERVIEW_THRESHOLD = 12
-HOLD_THRESHOLD = 7
+INTERVIEW_THRESHOLD = 13
+HOLD_THRESHOLD = 8
 
 REQUIRED_SKILLS = [
     "sales",
@@ -71,8 +71,9 @@ def score_skills(skills_text):
         score += 2
     if "relationship management" in matched:
         score += 1
-
-    return score, matched
+        
+score = len(matched)
+return min(score, 5), matched
 
 def decision_from_score(score, education_score, matched_skills, banking_exp_score):
     if education_score == -999:
