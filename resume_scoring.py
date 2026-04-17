@@ -72,7 +72,6 @@ def score_skills(skills_text):
     if "relationship management" in matched:
         score += 1
         
-score = len(matched)
 return min(score, 5), matched
 
 def decision_from_score(score, education_score, matched_skills, banking_exp_score):
