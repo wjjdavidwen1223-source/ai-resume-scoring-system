@@ -1,6 +1,8 @@
 import pandas as pd
 
-# Bank frontline resume screening criteria
+INTERVIEW_THRESHOLD = 10
+HOLD_THRESHOLD = 6
+
 REQUIRED_SKILLS = [
     "sales",
     "communication",
@@ -10,9 +12,6 @@ REQUIRED_SKILLS = [
     "relationship management"
 ]
 
-INTERVIEW_THRESHOLD = 10
-HOLD_THRESHOLD = 6
-
 def score_sales_experience(years):
     years = float(years)
     if years >= 2:
@@ -21,9 +20,23 @@ def score_sales_experience(years):
         return 2
     return 0
 
+def score_customer_service_experience(years):
+    years = float(years)
+    if years >= 2:
+        return 2
+    return 0
+
+def score_banking_experience(banking_exp):
+    if pd.isna(banking_exp):
+        return 0
+    banking_exp = str(banking_exp).strip().lower()
+    if banking_exp in ["yes", "y", "true", "1"]:
+        return 3
+    return 0
+
 def score_education(education):
     if pd.isna(education):
-        return -999  # fail minimum requirement
+        return -999
 
     education = str(education).lower()
 
@@ -34,7 +47,7 @@ def score_education(education):
     elif "high school" in education or "diploma" in education:
         return 0
     else:
-        return -999  # fail minimum requirement
+        return -999
 
 def score_skills(skills_text):
     if pd.isna(skills_text):
@@ -47,7 +60,6 @@ def score_skills(skills_text):
         if skill in skills_text:
             matched.append(skill)
 
-    # scoring logic
     score = 0
     if "sales" in matched:
         score += 2
@@ -62,15 +74,17 @@ def score_skills(skills_text):
 
     return score, matched
 
-def decision_from_score(score, education_score, matched_skills):
-    # minimum requirements
+def decision_from_score(score, education_score, matched_skills, banking_exp_score):
     if education_score == -999:
         return "Reject"
 
-    # must show at least some core relevant experience
     must_have = {"sales", "communication", "customer service"}
     if not must_have.intersection(set(matched_skills)):
         return "Reject"
+
+    # banking / financial exposure is strongly preferred for this version
+    if banking_exp_score == 0 and score < INTERVIEW_THRESHOLD:
+        return "Hold" if score >= HOLD_THRESHOLD else "Reject"
 
     if score >= INTERVIEW_THRESHOLD:
         return "Interview"
@@ -86,12 +100,18 @@ def run_screening(df):
         result["Name"] = ""
     if "Sales_Years" not in result.columns:
         result["Sales_Years"] = 0
+    if "Customer_Service_Years" not in result.columns:
+        result["Customer_Service_Years"] = 0
+    if "Banking_Experience" not in result.columns:
+        result["Banking_Experience"] = "No"
     if "Education" not in result.columns:
         result["Education"] = ""
     if "Skills" not in result.columns:
         result["Skills"] = ""
 
     result["Sales_Score"] = result["Sales_Years"].apply(score_sales_experience)
+    result["Customer_Service_Score"] = result["Customer_Service_Years"].apply(score_customer_service_experience)
+    result["Banking_Score"] = result["Banking_Experience"].apply(score_banking_experience)
     result["Education_Score"] = result["Education"].apply(score_education)
 
     skills_output = result["Skills"].apply(score_skills)
@@ -100,6 +120,8 @@ def run_screening(df):
 
     result["Score"] = (
         result["Sales_Score"] +
+        result["Customer_Service_Score"] +
+        result["Banking_Score"] +
         result["Education_Score"] +
         result["Skills_Score"]
     )
@@ -108,7 +130,8 @@ def run_screening(df):
         lambda row: decision_from_score(
             row["Score"],
             row["Education_Score"],
-            row["Matched_Skills"].split(", ") if row["Matched_Skills"] else []
+            row["Matched_Skills"].split(", ") if row["Matched_Skills"] else [],
+            row["Banking_Score"]
         ),
         axis=1
     )
