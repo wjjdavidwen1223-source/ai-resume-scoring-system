@@ -66,6 +66,7 @@ After scoring, candidates are routed into decision buckets:
   - hiring volume
 
 This reflects how recruiting decisions are often made in real workflows: not only based on absolute score, but also based on relative comparison within an active pipeline.
+These decisions determine candidate routing into different stages of the recruiting pipeline (e.g., assessment, recruiter screen, or interview).
 
 ---
 
@@ -164,6 +165,29 @@ The system can also trigger follow-ups:
 - Re-evaluation of held candidates after a defined time window  
 
 This ensures that candidates are not left waiting and helps maintain a responsive and efficient recruiting process.
+
+---
+
+## 📩 Candidate Communication Templates
+
+The system supports automated communication templates to ensure consistency and professionalism across candidate interactions.
+
+### Rejection Communication
+- Generates polite and neutral rejection messages
+- Avoids providing overly specific reasons to reduce legal and bias risks
+- Ensures candidates feel respected and acknowledged
+
+### Advancement Communication
+- Notifies candidates when they move to the next stage
+- Provides clear next steps (e.g., assessment, phone screen, interview)
+- Maintains a positive and engaging tone
+
+### Design Considerations
+- Use standardized templates with dynamic variables (e.g., candidate name, role)
+- Ensure tone is consistent across all stages
+- Balance automation with human review when necessary
+
+This approach ensures scalable communication while maintaining a strong candidate experience.
 
 ---
 
