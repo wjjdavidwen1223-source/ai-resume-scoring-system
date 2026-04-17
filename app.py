@@ -13,7 +13,7 @@ if uploaded_file is not None:
     st.subheader("Original Data")
     st.dataframe(df)
 
-    if st.button("Run Screening"):
+if st.button("Run Screening"):
     results = run_screening(df)
 
     st.subheader("Results")
