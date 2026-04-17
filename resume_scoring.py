@@ -1,7 +1,7 @@
 import pandas as pd
 
-INTERVIEW_THRESHOLD = 10
-HOLD_THRESHOLD = 6
+INTERVIEW_THRESHOLD = 12
+HOLD_THRESHOLD = 7
 
 REQUIRED_SKILLS = [
     "sales",
@@ -83,8 +83,8 @@ def decision_from_score(score, education_score, matched_skills, banking_exp_scor
         return "Reject"
 
     # banking / financial exposure is strongly preferred for this version
-    if banking_exp_score == 0 and score < INTERVIEW_THRESHOLD:
-        return "Hold" if score >= HOLD_THRESHOLD else "Reject"
+    if banking_exp_score == 0 and score >= INTERVIEW_THRESHOLD:
+        return "Hold"
 
     if score >= INTERVIEW_THRESHOLD:
         return "Interview"
