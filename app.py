@@ -14,7 +14,10 @@ if uploaded_file is not None:
     st.dataframe(df)
 
     if st.button("Run Screening"):
-        results = run_screening(df)
+    results = run_screening(df)
 
-        st.subheader("Results")
-        st.dataframe(results)
+    st.subheader("Results")
+    st.dataframe(results)
+
+    st.write("### Summary")
+    st.write(results["Decision"].value_counts())
