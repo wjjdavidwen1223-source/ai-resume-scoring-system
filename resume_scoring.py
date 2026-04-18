@@ -179,20 +179,20 @@ def build_reason_and_improvement(
         improvements.append("Add measurable sales outcomes such as quotas, targets, or conversion metrics.")
 
     if service_years < 2:
-        reasons.append("Customer service experience is below preferred threshold.")
-        improvements.append("Emphasize client-facing work, issue resolution, and service impact.")
+        reasons.append("Customer-facing experience is below preferred threshold.")
+        improvements.append("Emphasize client-facing work, issue resolution, onboarding, scheduling, or service impact.")
 
     if "sales" not in matched:
         reasons.append("Resume does not clearly signal sales experience.")
-        improvements.append("Use stronger sales wording such as upselling, cross-selling, or target achievement.")
+        improvements.append("Use stronger sales wording such as upselling, cross-selling, quotas, conversions, or target achievement.")
 
     if "communication" not in matched:
         reasons.append("Communication signal is not strong enough.")
         improvements.append("Add client communication, relationship management, or stakeholder interaction examples.")
 
     if "customer service" not in matched:
-        reasons.append("Customer service signal is weak in the resume wording.")
-        improvements.append("Include customer-facing responsibilities and service-related outcomes.")
+        reasons.append("Customer-facing signal is weak in the resume wording.")
+        improvements.append("Include customer-facing responsibilities and service-related outcomes more explicitly.")
 
     if decision == "Interview":
         reasons = ["Strong fit across role-relevant experience, communication, and operational readiness."]
@@ -273,6 +273,9 @@ def run_screening(df):
         "Skills": "",
         "Days_In_Pipeline": 0,
         "Candidate_Response_Status": "No Response",
+        "Customer_Facing_Evidence": "",
+        "Sales_Evidence": "",
+        "Banking_Evidence": "",
     }
 
     for col, default_val in defaults.items():
