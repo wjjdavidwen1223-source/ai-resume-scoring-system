@@ -1,10 +1,8 @@
 import pandas as pd
 
-# =========================
-# CONFIG
-# =========================
 INTERVIEW_THRESHOLD = 14
 HOLD_THRESHOLD = 10
+MAX_SCORE = 18  # used for Match Score %
 
 REQUIRED_SKILLS = [
     "sales",
@@ -18,9 +16,6 @@ REQUIRED_SKILLS = [
 CORE_SKILLS = {"sales", "communication", "customer service"}
 
 
-# =========================
-# SCORING FUNCTIONS
-# =========================
 def score_sales_experience(years):
     years = float(years)
     if years >= 2:
@@ -85,40 +80,89 @@ def score_skills(skills_text):
     if "relationship management" in matched:
         score += 1
 
-    # cap skill score to avoid keyword stuffing
+    # cap to avoid keyword stuffing
     return min(score, 5), matched
 
 
-# =========================
-# DECISION LOGIC
-# =========================
-def decision_with_reason(
-    total_score,
+def recruiter_signal(score, decision):
+    if decision == "Interview":
+        return "✅ Strong Interview Candidate"
+    elif decision == "Hold":
+        return "⚠️ Borderline / Hold for Review"
+    return "❌ Likely Rejected"
+
+
+def build_reason_and_improvement(
+    decision,
     education_score,
-    matched_skills,
     banking_exp_score,
     sales_years,
     customer_service_years,
+    matched_skills,
 ):
     matched_set = set(matched_skills)
-    core_skill_count = len(CORE_SKILLS.intersection(matched_set))
 
-    # 1) Minimum education requirement
+    reasons = []
+    improvements = []
+
     if education_score == -999:
-        return "Reject", "Does not meet minimum education requirement"
+        reasons.append("Does not meet minimum education requirement.")
+        improvements.append("Meet the minimum education requirement listed in the job posting.")
 
-    # 2) Hard reject: no customer-facing signal at all
-    if core_skill_count == 0 and customer_service_years < 1 and sales_years < 1:
-        return "Reject", "No meaningful customer-facing or sales-related signal"
+    if banking_exp_score == 0:
+        reasons.append("No clear banking or financial-related experience.")
+        improvements.append("Highlight any banking, financial, teller, branch, or client account exposure.")
 
-    # 3) Strict interview rule (very selective)
-    # To get Interview, candidate must satisfy ALL of these:
-    # - Bachelor's or Master's
-    # - Banking exposure = Yes
-    # - Sales experience >= 2 years
-    # - Customer service experience >= 2 years
-    # - Must show both sales and communication in skills
-    # - Total score >= interview threshold
+    if sales_years < 1:
+        reasons.append("Limited direct sales experience.")
+        improvements.append("Add measurable sales achievements or customer acquisition results.")
+    elif sales_years < 2:
+        reasons.append("Sales experience is below strong-interview level.")
+        improvements.append("Strengthen sales impact with numbers such as quotas, targets, or conversion rates.")
+
+    if customer_service_years < 2:
+        reasons.append("Customer service experience is below preferred level.")
+        improvements.append("Emphasize customer-facing responsibilities, conflict resolution, and service metrics.")
+
+    if "sales" not in matched_set:
+        reasons.append("Resume does not clearly show sales-related skills.")
+        improvements.append("Use stronger sales-related wording such as cross-selling, upselling, or target achievement.")
+
+    if "communication" not in matched_set:
+        reasons.append("Communication strengths are not clearly reflected.")
+        improvements.append("Add examples of client communication, relationship building, or stakeholder interaction.")
+
+    if "customer service" not in matched_set:
+        reasons.append("Customer service signal is weak in the resume wording.")
+        improvements.append("Include customer-facing tasks, service outcomes, and support responsibilities.")
+
+    if decision == "Interview":
+        reasons = ["Strong fit across experience, education, and role-specific signals."]
+        improvements = ["Continue tailoring the resume with quantified achievements and relevant banking language."]
+
+    if decision == "Hold" and not reasons:
+        reasons = ["Candidate shows potential but is missing one or more strong-match signals."]
+        improvements = ["Refine the resume to better align with the role’s required experience and skills."]
+
+    if decision == "Reject" and not reasons:
+        reasons = ["Candidate does not currently meet enough core role requirements."]
+        improvements = ["Add clearer role-relevant experience, stronger keywords, and quantified impact."]
+
+    return " ".join(reasons), " ".join(improvements)
+
+
+def decision_from_score(score, education_score, matched_skills, banking_exp_score, sales_years, customer_service_years):
+    matched_set = set(matched_skills)
+
+    # hard reject: no minimum education
+    if education_score == -999:
+        return "Reject"
+
+    # hard reject: no meaningful customer-facing / sales signal
+    if not CORE_SKILLS.intersection(matched_set) and sales_years < 1 and customer_service_years < 1:
+        return "Reject"
+
+    # strict interview rule
     if (
         education_score >= 2
         and banking_exp_score == 3
@@ -126,43 +170,17 @@ def decision_with_reason(
         and customer_service_years >= 2
         and "sales" in matched_set
         and "communication" in matched_set
-        and total_score >= INTERVIEW_THRESHOLD
+        and score >= INTERVIEW_THRESHOLD
     ):
-        return "Interview", "Strong fit across banking exposure, sales, communication, and service experience"
+        return "Interview"
 
-    # 4) Hold rules
-    # Candidate is not strong enough for Interview, but still worth keeping in pipeline
-    # Examples:
-    # - Has banking background but misses one key interview criterion
-    # - Has strong customer-facing profile but lacks banking experience
-    # - Has decent total score but not enough to move directly to interview
-    if (
-        total_score >= HOLD_THRESHOLD
-        and education_score >= 0
-        and (
-            banking_exp_score == 3
-            or core_skill_count >= 2
-            or sales_years >= 2
-            or customer_service_years >= 2
-        )
-    ):
-        if banking_exp_score == 0:
-            return "Hold", "Strong customer-facing profile but lacks banking/financial exposure"
-        if sales_years < 2:
-            return "Hold", "Relevant background, but sales experience is below direct interview threshold"
-        if customer_service_years < 2:
-            return "Hold", "Relevant background, but customer service experience is below direct interview threshold"
-        if "communication" not in matched_set:
-            return "Hold", "Relevant background, but communication signal is not strong enough for direct interview"
-        return "Hold", "Potential candidate, but not strong enough for direct interview"
+    # hold rule
+    if score >= HOLD_THRESHOLD:
+        return "Hold"
 
-    # 5) Default reject
-    return "Reject", "Below threshold for further progression"
+    return "Reject"
 
 
-# =========================
-# MAIN SCREENING FUNCTION
-# =========================
 def run_screening(df):
     result = df.copy()
 
@@ -189,7 +207,7 @@ def run_screening(df):
     skills_output = result["Skills"].apply(score_skills)
     result["Skills_Score"] = skills_output.apply(lambda x: x[0])
     result["Matched_Skills"] = skills_output.apply(lambda x: ", ".join(x[1]))
-    result["Core_Skill_Count"] = skills_output.apply(lambda x: len(CORE_SKILLS.intersection(set(x[1]))))
+    result["Matched_Skills_List"] = skills_output.apply(lambda x: x[1])
 
     result["Score"] = (
         result["Sales_Score"]
@@ -199,22 +217,43 @@ def run_screening(df):
         + result["Skills_Score"]
     )
 
-    decisions = result.apply(
-        lambda row: decision_with_reason(
-            total_score=row["Score"],
-            education_score=row["Education_Score"],
-            matched_skills=row["Matched_Skills"].split(", ") if row["Matched_Skills"] else [],
-            banking_exp_score=row["Banking_Score"],
-            sales_years=float(row["Sales_Years"]),
-            customer_service_years=float(row["Customer_Service_Years"]),
+    result["Decision"] = result.apply(
+        lambda row: decision_from_score(
+            row["Score"],
+            row["Education_Score"],
+            row["Matched_Skills_List"],
+            row["Banking_Score"],
+            float(row["Sales_Years"]),
+            float(row["Customer_Service_Years"]),
         ),
         axis=1,
     )
 
-    result["Decision"] = decisions.apply(lambda x: x[0])
-    result["Decision_Reason"] = decisions.apply(lambda x: x[1])
+    result["Match_Score_%"] = ((result["Score"] / MAX_SCORE) * 100).round(1)
+    result["Recruiter_Signal"] = result.apply(
+        lambda row: recruiter_signal(row["Score"], row["Decision"]),
+        axis=1,
+    )
 
-    # sort by score descending
+    explanations = result.apply(
+        lambda row: build_reason_and_improvement(
+            row["Decision"],
+            row["Education_Score"],
+            row["Banking_Score"],
+            float(row["Sales_Years"]),
+            float(row["Customer_Service_Years"]),
+            row["Matched_Skills_List"],
+        ),
+        axis=1,
+    )
+
+    result["Reason"] = explanations.apply(lambda x: x[0])
+    result["Improvement"] = explanations.apply(lambda x: x[1])
+
+    # drop helper column
+    result = result.drop(columns=["Matched_Skills_List"])
+
+    # sort highest score first
     result = result.sort_values(by="Score", ascending=False).reset_index(drop=True)
 
     return result
