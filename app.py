@@ -19,7 +19,10 @@ This system is designed to automate key recruiting operations, including:
 - follow-up messaging
 - pipeline visibility and dashboard metrics
 
-It is built to support faster, more consistent, and more scalable hiring workflows.
+It now supports:
+- batch CSV screening
+- single-resume PDF/DOCX screening
+- evidence-based inference for customer-facing and sales experience
 """
 )
 
@@ -118,26 +121,6 @@ with tab1:
             st.subheader("Full Candidate Output")
             st.dataframe(results, use_container_width=True)
 
-            st.subheader("Workflow Architecture")
-            st.markdown(
-                """
-**Input Layer**  
-Candidate data → structured fields (experience, education, skills, pipeline timing)
-
-**Evaluation Layer**  
-Scoring model → role alignment, experience fit, banking exposure, communication signals
-
-**Decision Layer**  
-Interview / Hold / Reject
-
-**Operations Layer**  
-Priority queue → follow-up due → recruiter next action
-
-**Communication Layer**  
-Auto-generated candidate message based on decision stage
-"""
-            )
-
             csv_output = results.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="Download Workflow Results as CSV",
@@ -159,7 +142,7 @@ with tab2:
             extracted_text = extract_text_from_uploaded_file(uploaded_resume)
 
             st.subheader("Extracted Resume Text")
-            st.text_area("Resume Preview", extracted_text[:5000], height=300)
+            st.text_area("Resume Preview", extracted_text[:5000], height=260)
 
             if st.button("Score This Resume", key="score_resume"):
                 parsed_df = parse_resume_to_dataframe(extracted_text, role=role)
@@ -183,6 +166,11 @@ with tab2:
                 st.write("**Reason:**", row["Reason"])
                 st.write("**Improvement:**", row["Improvement"])
                 st.write("**Generated Message:**", row["Generated_Message"])
+
+                st.subheader("Evidence Detected")
+                st.write("**Customer-Facing Evidence:**", row.get("Customer_Facing_Evidence", ""))
+                st.write("**Sales Evidence:**", row.get("Sales_Evidence", ""))
+                st.write("**Banking Evidence:**", row.get("Banking_Evidence", ""))
 
         except Exception as e:
             st.error(f"Could not process file: {e}")
