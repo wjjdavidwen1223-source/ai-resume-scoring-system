@@ -2,14 +2,26 @@ def _first_name(name: str) -> str:
     cleaned = str(name).strip()
     if not cleaned:
         return "there"
-    return cleaned.split()[0]
+
+    parts = cleaned.split()
+    if not parts:
+        return "there"
+
+    return parts[0]
+
+
+def _safe_text(value) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
 
 
 def generate_stage_message(row):
     first_name = _first_name(row.get("Name", ""))
-    role = row.get("Role", "the role")
-    stage = str(row.get("Current_Stage", "")).strip()
-    next_action = str(row.get("Workflow_Next_Action", "")).strip()
+    role = _safe_text(row.get("Role", "the role"))
+    stage = _safe_text(row.get("Current_Stage", ""))
+    next_action = _safe_text(row.get("Workflow_Next_Action", ""))
+    blocker = _safe_text(row.get("Workflow_Blocker", ""))
 
     if stage == "Assessment Sent":
         return (
@@ -20,22 +32,20 @@ def generate_stage_message(row):
 
     if stage == "Assessment Completed":
         return (
-            f"Hi {first_name}, thank you for completing the assessment for the {role} position. "
-            f"Our team is currently reviewing your results. "
-            f"We’ll be in touch soon with the next steps."
+            f"Hi {first_name}, thank you for completing the assessments for the {role} position. "
+            f"Our team is currently reviewing your results, and we’ll follow up soon with the next steps."
         )
 
     if stage == "Assessment Passed":
         return (
-            f"Hi {first_name}, thank you for completing the assessment for the {role} position. "
-            f"We’d like to move you forward to a recruiter phone screen. "
-            f"Next step: {next_action or 'Schedule recruiter phone screen'}."
+            f"Hi {first_name}, thank you for completing the assessments for the {role} position. "
+            f"We’re pleased to move you forward to the next step, which is a recruiter phone screen."
         )
 
     if stage == "Recruiter Phone Screen":
         return (
             f"Hi {first_name}, thank you for your continued interest in the {role} position. "
-            f"We’d like to invite you to a recruiter phone screen as the next step in the process."
+            f"The next step in the process is a recruiter phone screen, and our team will be in touch regarding scheduling."
         )
 
     if stage == "Hiring Manager Interview":
@@ -47,7 +57,7 @@ def generate_stage_message(row):
     if stage == "Interview Debrief":
         return (
             f"Hi {first_name}, thank you again for speaking with our team regarding the {role} position. "
-            f"We are currently reviewing interview feedback and will follow up with next steps soon."
+            f"We are currently reviewing interview feedback and will follow up with next steps as soon as possible."
         )
 
     if stage == "Final HR Call":
@@ -59,13 +69,13 @@ def generate_stage_message(row):
     if stage == "Offer":
         return (
             f"Hi {first_name}, thank you for your time throughout the process for the {role} position. "
-            f"We are preparing the next stage of your candidacy and will follow up shortly regarding the offer process."
+            f"We are currently preparing the next stage of your candidacy and will follow up shortly regarding the offer process."
         )
 
     if stage == "Hired":
         return (
-            f"Hi {first_name}, congratulations! We’re excited to have you moving forward for the {role} position. "
-            f"Our team will be in touch with onboarding details shortly."
+            f"Hi {first_name}, congratulations! We’re excited to move forward with you for the {role} position. "
+            f"Our team will follow up shortly with onboarding details."
         )
 
     if stage == "Rejected":
@@ -75,6 +85,18 @@ def generate_stage_message(row):
             f"We appreciate your interest and encourage you to apply again in the future if relevant opportunities arise."
         )
 
+    if next_action:
+        return (
+            f"Hi {first_name}, thank you for your interest in the {role} position. "
+            f"Our team is currently reviewing your application. Next step: {next_action}."
+        )
+
+    if blocker:
+        return (
+            f"Hi {first_name}, thank you for your continued interest in the {role} position. "
+            f"Our team is still reviewing your application and will follow up once the next step is available."
+        )
+
     return (
         f"Hi {first_name}, thank you for your interest in the {role} position. "
         f"We’ll follow up soon with the next steps in the process."
@@ -82,29 +104,79 @@ def generate_stage_message(row):
 
 
 def generate_internal_recruiter_note(row):
-    name = row.get("Name", "Unknown Candidate")
-    role = row.get("Role", "Unknown Role")
-    stage = row.get("Current_Stage", "")
-    decision = row.get("Decision", "")
-    score = row.get("Score", "")
-    match_pct = row.get("Match_Score_%", "")
-    matched_signals = row.get("Matched_Signals", "")
-    missing_signals = row.get("Missing_Signals", "")
-    blocker = row.get("Workflow_Blocker", "")
-    next_action = row.get("Workflow_Next_Action", "")
+    name = _safe_text(row.get("Name", "Unknown Candidate"))
+    role = _safe_text(row.get("Role", "Unknown Role"))
+    stage = _safe_text(row.get("Current_Stage", ""))
+    decision = _safe_text(row.get("Decision", ""))
+    score = _safe_text(row.get("Score", ""))
+    match_pct = _safe_text(row.get("Match_Score_%", ""))
+    priority = _safe_text(row.get("Priority", ""))
+    matched_signals = _safe_text(row.get("Matched_Signals", ""))
+    missing_signals = _safe_text(row.get("Missing_Signals", ""))
+    reason = _safe_text(row.get("Reason", ""))
+    blocker = _safe_text(row.get("Workflow_Blocker", ""))
+    next_action = _safe_text(row.get("Workflow_Next_Action", ""))
+    last_event = _safe_text(row.get("Last_Workflow_Event", ""))
 
     return (
-        f"Candidate: {name} | Role: {role} | Stage: {stage} | Screening Decision: {decision} | "
-        f"Score: {score} | Match: {match_pct}% | "
+        f"Candidate: {name} | "
+        f"Role: {role} | "
+        f"Stage: {stage} | "
+        f"Screening Decision: {decision} | "
+        f"Priority: {priority} | "
+        f"Score: {score} | "
+        f"Match: {match_pct}% | "
         f"Matched Signals: {matched_signals or 'N/A'} | "
         f"Missing Signals: {missing_signals or 'N/A'} | "
+        f"Reason: {reason or 'N/A'} | "
+        f"Last Event: {last_event or 'N/A'} | "
         f"Blocker: {blocker or 'None'} | "
         f"Next Action: {next_action or 'None'}"
     )
+
+
+def generate_stage_badge(row):
+    stage = _safe_text(row.get("Current_Stage", "")).lower()
+
+    if stage in {"offer", "hired"}:
+        return "🟢 Late Stage"
+
+    if stage in {"final hr call", "hiring manager interview", "recruiter phone screen"}:
+        return "🟡 Interviewing"
+
+    if stage in {"assessment sent", "assessment completed", "assessment passed"}:
+        return "🔵 Assessment"
+
+    if stage in {"rejected"}:
+        return "🔴 Closed"
+
+    return "⚪ Early Stage"
+
+
+def generate_candidate_status_summary(row):
+    decision = _safe_text(row.get("Decision", ""))
+    stage = _safe_text(row.get("Current_Stage", ""))
+    next_action = _safe_text(row.get("Workflow_Next_Action", ""))
+    blocker = _safe_text(row.get("Workflow_Blocker", ""))
+
+    parts = []
+
+    if decision:
+        parts.append(f"Decision: {decision}")
+    if stage:
+        parts.append(f"Stage: {stage}")
+    if next_action:
+        parts.append(f"Next: {next_action}")
+    if blocker:
+        parts.append(f"Blocker: {blocker}")
+
+    return " | ".join(parts)
 
 
 def attach_messages(df):
     result = df.copy()
     result["Stage_Message"] = result.apply(generate_stage_message, axis=1)
     result["Recruiter_Note"] = result.apply(generate_internal_recruiter_note, axis=1)
+    result["Stage_Badge"] = result.apply(generate_stage_badge, axis=1)
+    result["Candidate_Status_Summary"] = result.apply(generate_candidate_status_summary, axis=1)
     return result
