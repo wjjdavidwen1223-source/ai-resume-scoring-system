@@ -39,237 +39,92 @@ CUSTOMER_DIRECT_TERMS = [
 ]
 
 CUSTOMER_PEOPLE_TERMS = [
-    "customer",
-    "customers",
-    "client",
-    "clients",
-    "guest",
-    "guests",
-    "patient",
-    "patients",
-    "visitor",
-    "visitors",
-    "member",
-    "members",
-    "user",
-    "users",
-    "family",
-    "families",
-    "students",
+    "customer", "customers", "client", "clients", "guest", "guests",
+    "patient", "patients", "visitor", "visitors", "member", "members",
+    "user", "users", "family", "families", "students",
 ]
 
 CUSTOMER_ACTION_TERMS = [
-    "assisted",
-    "helped",
-    "supported",
-    "served",
-    "advised",
-    "guided",
-    "responded",
-    "communicated",
-    "interacted",
-    "handled",
-    "resolved",
-    "addressed",
-    "explained",
-    "coordinated",
-    "scheduled",
-    "hosted",
-    "welcomed",
-    "greeted",
+    "assisted", "helped", "supported", "served", "advised", "guided",
+    "responded", "communicated", "interacted", "handled", "resolved",
+    "addressed", "explained", "coordinated", "scheduled", "hosted",
+    "welcomed", "greeted",
 ]
 
 CUSTOMER_CONTEXT_TERMS = [
-    "inquiries",
-    "questions",
-    "issues",
-    "concerns",
-    "requests",
-    "appointments",
-    "accounts",
-    "service",
-    "support",
-    "onboarding",
-    "check-in",
-    "scheduling",
-    "communications",
-    "intake",
-    "queue",
-    "traffic",
+    "inquiries", "questions", "issues", "concerns", "requests",
+    "appointments", "accounts", "service", "support", "onboarding",
+    "check-in", "scheduling", "communications", "intake", "queue", "traffic",
 ]
 
 SALES_DIRECT_TERMS = [
-    "sales",
-    "selling",
-    "upselling",
-    "cross-selling",
-    "quota",
-    "revenue",
-    "business development",
-    "referral",
-    "referrals",
-    "prospecting",
-    "pipeline",
+    "sales", "selling", "upselling", "cross-selling", "quota",
+    "revenue", "business development", "referral", "referrals",
+    "prospecting", "pipeline",
 ]
 
 SALES_ACTION_TERMS = [
-    "sold",
-    "generated",
-    "increased",
-    "converted",
-    "closed",
-    "promoted",
-    "recommended",
-    "pitched",
-    "marketed",
-    "achieved",
-    "exceeded",
-    "referred",
-    "advised",
+    "sold", "generated", "increased", "converted", "closed", "promoted",
+    "recommended", "pitched", "marketed", "achieved", "exceeded",
+    "referred", "advised",
 ]
 
 SALES_CONTEXT_TERMS = [
-    "target",
-    "quota",
-    "goal",
-    "revenue",
-    "conversion",
-    "clients",
-    "accounts",
-    "products",
-    "services",
-    "solutions",
+    "target", "quota", "goal", "revenue", "conversion", "clients",
+    "accounts", "products", "services", "solutions",
 ]
 
 BANKING_TERMS = [
-    "bank",
-    "banking",
-    "teller",
-    "relationship banker",
-    "associate banker",
-    "branch banker",
-    "financial services",
-    "credit union",
-    "loan",
-    "deposit",
-    "deposits",
-    "withdrawal",
-    "withdrawals",
-    "branch",
-    "account opening",
-    "consumer banking",
-    "retail banking",
-    "checking",
-    "savings",
-    "financial center",
+    "bank", "banking", "teller", "relationship banker", "associate banker",
+    "branch banker", "financial services", "credit union", "loan", "deposit",
+    "deposits", "withdrawal", "withdrawals", "branch", "account opening",
+    "consumer banking", "retail banking", "checking", "savings", "financial center",
 ]
 
 COMMUNICATION_TERMS = [
-    "communication",
-    "communicated",
-    "presented",
-    "explained",
-    "coordinated",
-    "liaised",
-    "interfaced",
-    "stakeholders",
-    "clients",
-    "customers",
+    "communication", "communicated", "presented", "explained", "coordinated",
+    "liaised", "interfaced", "stakeholders", "clients", "customers",
 ]
 
 CASH_TERMS = [
-    "cash handling",
-    "cash",
-    "cash drawer",
-    "cash vault",
-    "payments",
-    "deposits",
-    "withdrawals",
-    "money handling",
-    "till",
-    "register",
-    "cashier",
-    "cash transactions",
-    "drawer reconciliation",
+    "cash handling", "cash", "cash drawer", "cash vault", "payments",
+    "deposits", "withdrawals", "money handling", "till", "register",
+    "cashier", "cash transactions", "drawer reconciliation",
 ]
 
 DIGITAL_BANKING_TERMS = [
-    "mobile banking",
-    "online banking",
-    "self-service",
-    "atm",
-    "digital banking",
-    "mobile app",
-    "banking app",
-    "technology solutions",
-    "self service",
-    "digital tools",
-    "digital platform",
+    "mobile banking", "online banking", "self-service", "atm",
+    "digital banking", "mobile app", "banking app", "technology solutions",
+    "self service", "digital tools", "digital platform",
 ]
 
 RELATIONSHIP_TERMS = [
-    "relationship",
-    "relationships",
-    "trusted relationship",
-    "client needs",
-    "financial goals",
-    "advisory",
-    "recommendations",
-    "consultative",
-    "rapport",
-    "retention",
-    "relationship building",
+    "relationship", "relationships", "trusted relationship", "client needs",
+    "financial goals", "advisory", "recommendations", "consultative",
+    "rapport", "retention", "relationship building",
 ]
 
 OPERATIONS_TERMS = [
-    "appointments",
-    "scheduling",
-    "queue",
-    "lobby",
-    "traffic",
-    "branch operations",
-    "compliance",
-    "procedures",
-    "policies",
-    "regulatory",
-    "accuracy",
-    "process",
-    "guidelines",
-    "workflow",
-    "documentation",
-    "risk awareness",
+    "appointments", "scheduling", "queue", "lobby", "traffic",
+    "branch operations", "compliance", "procedures", "policies",
+    "regulatory", "accuracy", "process", "guidelines", "workflow",
+    "documentation", "risk awareness",
 ]
 
 PROBLEM_SOLVING_TERMS = [
-    "resolved",
-    "resolution",
-    "problem solving",
-    "troubleshoot",
-    "investigated",
-    "handled issues",
-    "addressed concerns",
-    "critical thinking",
-    "issue resolution",
+    "resolved", "resolution", "problem solving", "troubleshoot",
+    "investigated", "handled issues", "addressed concerns",
+    "critical thinking", "issue resolution",
 ]
 
 ADAPTABILITY_TERMS = [
-    "adapted",
-    "adaptability",
-    "learned quickly",
-    "new systems",
-    "new technology",
-    "fast-paced",
-    "cross-trained",
-    "flexible",
+    "adapted", "adaptability", "learned quickly", "new systems",
+    "new technology", "fast-paced", "cross-trained", "flexible",
 ]
 
 NAME_STOP_TERMS = [
-    "summary",
-    "education",
-    "skills",
-    "experience",
-    "relevant experience",
-    "professional experience",
+    "summary", "education", "skills", "experience", "relevant experience",
+    "professional experience", "language", "languages",
 ]
 
 
@@ -283,39 +138,49 @@ def normalize_text(text: str) -> str:
 
 def unique_preserve_order(items: list[str]) -> list[str]:
     seen = set()
-    output = []
+    out = []
     for item in items:
         if item not in seen:
             seen.add(item)
-            output.append(item)
-    return output
+            out.append(item)
+    return out
 
 
 def extract_name(text: str) -> str:
     lines = clean_lines(text)
 
-    for line in lines[:8]:
-        norm = normalize_text(line)
+    for line in lines[:6]:
+        original = line.strip()
+        norm = normalize_text(original)
 
         if any(stop in norm for stop in NAME_STOP_TERMS):
             continue
-        if "@" in line:
-            continue
-        if re.search(r"\d{3}[-\s]?\d{3}[-\s]?\d{4}", line):
-            continue
-        if len(line) > 80:
-            continue
-        if len(line.split()) > 6:
+
+        # 如果一行里带了邮箱/电话/地址，只取最左侧名字部分
+        if "|" in original:
+            original = original.split("|")[0].strip()
+            norm = normalize_text(original)
+
+        if "@" in original:
             continue
 
-        return line.strip()
+        if re.search(r"\d{3}[-\s]?\d{3}[-\s]?\d{4}", original):
+            continue
+
+        # 去掉括号内容后再判断
+        cleaned = re.sub(r"\([^)]*\)", " ", original)
+        cleaned = re.sub(r"[^A-Za-z\u4e00-\u9fff\s\-]", " ", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+        words = cleaned.split()
+        if 1 < len(words) <= 5:
+            return cleaned
 
     return "Unknown"
 
 
 def extract_education(text: str) -> str:
     lower = text.lower()
-
     if "master" in lower:
         return "Master"
     if "bachelor" in lower:
@@ -324,7 +189,6 @@ def extract_education(text: str) -> str:
         return "Associate"
     if "high school" in lower or "ged" in lower or "diploma" in lower:
         return "High School"
-
     return ""
 
 
@@ -335,7 +199,6 @@ def detect_banking_experience(text: str):
 
     if matched:
         return "Yes", " | ".join(matched[:8])
-
     return "No", ""
 
 
@@ -343,7 +206,6 @@ def detect_signal(text: str, terms: list[str]):
     lines = [normalize_text(line) for line in clean_lines(text)]
     evidence_lines = [line for line in lines if any(term in line for term in terms)]
     evidence_lines = unique_preserve_order(evidence_lines)
-
     return ("Yes" if evidence_lines else "No"), " | ".join(evidence_lines[:4])
 
 
@@ -361,13 +223,13 @@ def infer_customer_facing_years(text: str):
             evidence_lines.append(line)
 
     evidence_lines = unique_preserve_order(evidence_lines)
-    evidence_count = len(evidence_lines)
+    count = len(evidence_lines)
 
-    if evidence_count >= 5:
+    if count >= 5:
         years = 3
-    elif evidence_count >= 3:
+    elif count >= 3:
         years = 2
-    elif evidence_count >= 1:
+    elif count >= 1:
         years = 1
     else:
         years = 0
@@ -389,13 +251,13 @@ def infer_sales_years(text: str):
             evidence_lines.append(line)
 
     evidence_lines = unique_preserve_order(evidence_lines)
-    evidence_count = len(evidence_lines)
+    count = len(evidence_lines)
 
-    if evidence_count >= 5:
+    if count >= 5:
         years = 3
-    elif evidence_count >= 3:
+    elif count >= 3:
         years = 2
-    elif evidence_count >= 1:
+    elif count >= 1:
         years = 1
     else:
         years = 0
@@ -407,7 +269,6 @@ def infer_cash_handling_years(text: str):
     lines = [normalize_text(line) for line in clean_lines(text)]
     evidence_lines = [line for line in lines if any(term in line for term in CASH_TERMS)]
     evidence_lines = unique_preserve_order(evidence_lines)
-
     count = len(evidence_lines)
 
     if count >= 4:
@@ -472,7 +333,10 @@ def split_experience_blocks(text: str) -> list[str]:
         heading_like = (
             len(line) < 110 and (
                 re.search(r"\b(20\d{2}|19\d{2})\b", line) or
-                re.search(r"\b(bank|corp|company|inc|llc|branch|store|university|college|school|restaurant|advisor|cashier)\b", line.lower())
+                re.search(
+                    r"\b(bank|corp|company|inc|llc|branch|store|university|college|school|restaurant|advisor|cashier|tesla|uber)\b",
+                    line.lower(),
+                )
             )
         )
 
