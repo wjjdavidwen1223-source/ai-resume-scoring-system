@@ -69,7 +69,6 @@ def refresh_pipeline(df: pd.DataFrame) -> pd.DataFrame:
 def update_candidate_field(df: pd.DataFrame, candidate_name: str, field: str, value):
     updated = df.copy()
     match_idx = updated.index[updated["Name"] == candidate_name]
-
     if len(match_idx) == 0:
         return updated
 
@@ -81,7 +80,6 @@ def update_candidate_field(df: pd.DataFrame, candidate_name: str, field: str, va
 def update_multiple_fields(df: pd.DataFrame, candidate_name: str, updates: dict):
     updated = df.copy()
     match_idx = updated.index[updated["Name"] == candidate_name]
-
     if len(match_idx) == 0:
         return updated
 
@@ -91,6 +89,223 @@ def update_multiple_fields(df: pd.DataFrame, candidate_name: str, updates: dict)
 
     updated = refresh_pipeline(updated)
     return updated
+
+
+def reset_candidate_workflow(df: pd.DataFrame, candidate_name: str):
+    updated = df.copy()
+    match_idx = updated.index[updated["Name"] == candidate_name]
+    if len(match_idx) == 0:
+        return updated
+
+    row_idx = match_idx[0]
+
+    reset_fields = {
+        "Assessment_Status": "Not Sent",
+        "Assessment_Result": "Pending",
+        "Cognitive_Test_Status": "Not Sent",
+        "Personality_Test_Status": "Not Sent",
+        "Cognitive_Score": "",
+        "Personality_Match": "",
+        "Recruiter_Call_Status": "Not Scheduled",
+        "Recruiter_Call_Outcome": "Pending",
+        "Recruiter_Notes": "",
+        "Manager_Interview_Status": "Not Scheduled",
+        "Manager_Interview_Outcome": "Pending",
+        "Manager_Feedback": "",
+        "Interview_Debrief_Status": "Pending",
+        "Final_HR_Status": "Not Started",
+        "Final_HR_Outcome": "Pending",
+        "Offer_Status": "None",
+        "Offer_Decision": "Pending",
+        "Workflow_Next_Action": "",
+        "Workflow_Blocker": "",
+        "Last_Workflow_Event": "",
+        "Current_Stage": "Applied",
+    }
+
+    for field, value in reset_fields.items():
+        if field in updated.columns:
+            updated.loc[row_idx, field] = value
+
+    updated = refresh_pipeline(updated)
+    return updated
+
+
+def render_dynamic_stage_controls(df: pd.DataFrame, candidate_name: str, state_key: str):
+    row = df[df["Name"] == candidate_name].iloc[0]
+    stage = str(row.get("Current_Stage", "")).strip()
+
+    st.write("### Recruiter Workflow Controls")
+
+    c1, c2, c3 = st.columns(3)
+
+    if stage == "Assessment Sent":
+        with c1:
+            if st.button("Mark Assessment Completed", key=f"{state_key}_assessment_completed_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Cognitive_Test_Status": "Completed",
+                        "Personality_Test_Status": "Completed",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Mark Assessment Failed", key=f"{state_key}_assessment_failed_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Assessment_Result", "Fail")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+    elif stage == "Assessment Completed":
+        with c1:
+            if st.button("Mark Assessment Passed", key=f"{state_key}_assessment_passed_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Assessment_Result", "Pass")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Mark Assessment Failed", key=f"{state_key}_assessment_failed2_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Assessment_Result", "Fail")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+    elif stage in {"Assessment Passed", "Recruiter Phone Screen"}:
+        with c1:
+            if st.button("Schedule Recruiter Call", key=f"{state_key}_recruiter_schedule_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Recruiter_Call_Status", "Scheduled")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Mark Recruiter Call Passed", key=f"{state_key}_recruiter_pass_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Recruiter_Call_Status": "Completed",
+                        "Recruiter_Call_Outcome": "Pass",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c3:
+            if st.button("Mark Recruiter Call Failed", key=f"{state_key}_recruiter_fail_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Recruiter_Call_Status": "Completed",
+                        "Recruiter_Call_Outcome": "Fail",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+    elif stage == "Hiring Manager Interview":
+        with c1:
+            if st.button("Schedule Manager Interview", key=f"{state_key}_manager_schedule_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Manager_Interview_Status", "Scheduled")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Mark Manager Interview Passed", key=f"{state_key}_manager_pass_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Manager_Interview_Status": "Completed",
+                        "Manager_Interview_Outcome": "Pass",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c3:
+            if st.button("Mark Manager Interview Failed", key=f"{state_key}_manager_fail_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Manager_Interview_Status": "Completed",
+                        "Manager_Interview_Outcome": "Fail",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+    elif stage == "Final HR Call":
+        with c1:
+            if st.button("Schedule Final HR", key=f"{state_key}_finalhr_schedule_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Final_HR_Status", "Scheduled")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Mark Final HR Passed", key=f"{state_key}_finalhr_pass_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Final_HR_Status": "Completed",
+                        "Final_HR_Outcome": "Pass",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c3:
+            if st.button("Mark Final HR Failed", key=f"{state_key}_finalhr_fail_{candidate_name}"):
+                updated = update_multiple_fields(
+                    df,
+                    candidate_name,
+                    {
+                        "Final_HR_Status": "Completed",
+                        "Final_HR_Outcome": "Fail",
+                    },
+                )
+                st.session_state[state_key] = updated
+                st.rerun()
+
+    elif stage == "Offer":
+        with c1:
+            if st.button("Draft Offer", key=f"{state_key}_offer_draft_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Offer_Status", "Draft")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c2:
+            if st.button("Send Offer", key=f"{state_key}_offer_send_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Offer_Status", "Sent")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        with c3:
+            if st.button("Offer Accepted", key=f"{state_key}_offer_accept_{candidate_name}"):
+                updated = update_candidate_field(df, candidate_name, "Offer_Decision", "Accepted")
+                st.session_state[state_key] = updated
+                st.rerun()
+
+        if st.button("Offer Declined", key=f"{state_key}_offer_decline_{candidate_name}"):
+            updated = update_candidate_field(df, candidate_name, "Offer_Decision", "Declined")
+            st.session_state[state_key] = updated
+            st.rerun()
+
+    elif stage in {"Hired", "Rejected"}:
+        st.success(f"Current terminal stage: {stage}")
+
+    else:
+        st.info("No dynamic controls available for the current stage yet.")
+
+    st.write("### Reset / Restart Candidate Workflow")
+    if st.button("Reset Candidate Workflow", key=f"{state_key}_reset_{candidate_name}"):
+        updated = reset_candidate_workflow(df, candidate_name)
+        st.session_state[state_key] = updated
+        st.rerun()
 
 
 with tab1:
@@ -104,7 +319,6 @@ with tab1:
 
     if uploaded_csv is not None:
         df = pd.read_csv(uploaded_csv)
-
         st.write("### Input Data")
         st.dataframe(df, use_container_width=True)
 
@@ -140,44 +354,27 @@ with tab1:
         c7.metric("Average Score", avg_score)
 
         st.write("### Decision Distribution")
-        decision_counts = batch_results["Decision"].value_counts()
-        st.bar_chart(decision_counts)
+        st.bar_chart(batch_results["Decision"].value_counts())
 
         st.write("### Workflow Stage Distribution")
-        workflow_counts = batch_results["Current_Stage"].value_counts()
-        st.bar_chart(workflow_counts)
+        st.bar_chart(batch_results["Current_Stage"].value_counts())
 
-        st.write("### Top Candidates")
         top_candidate_cols = [
-            "Name",
-            "Role",
-            "Score",
-            "Max_Score",
-            "Match_Score_%",
-            "Decision",
-            "Current_Stage",
-            "Stage_Badge",
-            "Matched_Signals",
-            "Reason",
-            "Experience_Summaries",
+            "Name", "Role", "Score", "Max_Score", "Match_Score_%",
+            "Decision", "Current_Stage", "Stage_Badge",
+            "Matched_Signals", "Reason", "Experience_Summaries",
         ]
         existing_top_cols = [c for c in top_candidate_cols if c in batch_results.columns]
+        st.write("### Top Candidates")
         st.dataframe(batch_results[existing_top_cols].head(10), use_container_width=True)
 
-        st.write("### Recruiter Queue")
         recruiter_queue_cols = [
-            "Name",
-            "Role",
-            "Score",
-            "Match_Score_%",
-            "Decision",
-            "Priority",
-            "Current_Stage",
-            "Workflow_Next_Action",
-            "Workflow_Blocker",
-            "Recruiter_Signal",
+            "Name", "Role", "Score", "Match_Score_%", "Decision",
+            "Priority", "Current_Stage", "Workflow_Next_Action",
+            "Workflow_Blocker", "Recruiter_Signal",
         ]
         existing_queue_cols = [c for c in recruiter_queue_cols if c in batch_results.columns]
+        st.write("### Recruiter Queue")
         st.dataframe(batch_results[existing_queue_cols], use_container_width=True)
 
         st.write("### Full Candidate Output")
@@ -204,7 +401,6 @@ with tab2:
     if uploaded_resume is not None:
         try:
             extracted_text = extract_text_from_uploaded_file(uploaded_resume)
-
             st.write("### Extracted Resume Text")
             st.text_area("Resume Preview", extracted_text[:6000], height=260)
 
@@ -213,10 +409,8 @@ with tab2:
                     extracted_text,
                     role=selected_profile["label"],
                 )
-
                 screened = run_screening(parsed_df, profile_key=profile_key)
                 screened = refresh_pipeline(screened)
-
                 st.session_state["single_results"] = screened
 
         except Exception as e:
@@ -233,6 +427,7 @@ with tab2:
         c2.metric("Match Score", f"{row['Match_Score_%']}%")
         c3.metric("Decision", row["Decision"])
 
+        st.write("**Name:**", row["Name"])
         st.write("**Role:**", row["Role"])
         st.write("**Current Stage:**", row["Current_Stage"])
         st.write("**Stage Badge:**", row.get("Stage_Badge", ""))
@@ -269,8 +464,15 @@ with tab2:
         st.write("### Recruiter Note")
         st.code(row.get("Recruiter_Note", ""), language="text")
 
+        st.write("### Continue Workflow Here")
+        render_dynamic_stage_controls(
+            st.session_state["single_results"],
+            row["Name"],
+            "single_results",
+        )
+
         st.write("### Parsed Candidate Data")
-        st.dataframe(single_results, use_container_width=True)
+        st.dataframe(st.session_state["single_results"], use_container_width=True)
 
 
 with tab3:
@@ -304,12 +506,11 @@ with tab3:
             st.dataframe(queue_df, use_container_width=True)
 
         st.write("### Candidate Workflow Controls")
-
         candidate_names = pipeline_df["Name"].tolist()
         selected_candidate = st.selectbox(
             "Select candidate to manage",
             options=candidate_names,
-            key="pipeline_candidate_selector",
+            key=f"{state_key}_pipeline_candidate_selector",
         )
 
         selected_row = pipeline_df[pipeline_df["Name"] == selected_candidate].iloc[0]
@@ -319,217 +520,21 @@ with tab3:
         c2.metric("Decision", selected_row.get("Decision", ""))
         c3.metric("Priority", selected_row.get("Priority", ""))
 
+        st.write("**Name:**", selected_row.get("Name", ""))
         st.write("**Stage Badge:**", selected_row.get("Stage_Badge", ""))
         st.write("**Next Action:**", selected_row.get("Workflow_Next_Action", ""))
         st.write("**Blocker:**", selected_row.get("Workflow_Blocker", ""))
         st.write("**Last Workflow Event:**", selected_row.get("Last_Workflow_Event", ""))
 
-        st.write("### Recruiter Action Buttons")
+        render_dynamic_stage_controls(
+            st.session_state[state_key],
+            selected_candidate,
+            state_key,
+        )
 
-        col_a, col_b, col_c = st.columns(3)
-
-        with col_a:
-            if st.button("Assessment Completed", key="assessment_completed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Cognitive_Test_Status": "Completed",
-                        "Personality_Test_Status": "Completed",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Assessment marked as completed.")
-                st.rerun()
-
-            if st.button("Assessment Passed", key="assessment_passed"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Assessment_Result",
-                    "Pass",
-                )
-                st.session_state[state_key] = updated
-                st.success("Assessment marked as passed.")
-                st.rerun()
-
-            if st.button("Assessment Failed", key="assessment_failed"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Assessment_Result",
-                    "Fail",
-                )
-                st.session_state[state_key] = updated
-                st.success("Assessment marked as failed.")
-                st.rerun()
-
-        with col_b:
-            if st.button("Recruiter Call Scheduled", key="recruiter_call_scheduled"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Recruiter_Call_Status",
-                    "Scheduled",
-                )
-                st.session_state[state_key] = updated
-                st.success("Recruiter call marked as scheduled.")
-                st.rerun()
-
-            if st.button("Recruiter Call Passed", key="recruiter_call_passed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Recruiter_Call_Status": "Completed",
-                        "Recruiter_Call_Outcome": "Pass",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Recruiter call marked as passed.")
-                st.rerun()
-
-            if st.button("Recruiter Call Failed", key="recruiter_call_failed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Recruiter_Call_Status": "Completed",
-                        "Recruiter_Call_Outcome": "Fail",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Recruiter call marked as failed.")
-                st.rerun()
-
-        with col_c:
-            if st.button("Manager Interview Scheduled", key="manager_interview_scheduled"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Manager_Interview_Status",
-                    "Scheduled",
-                )
-                st.session_state[state_key] = updated
-                st.success("Manager interview marked as scheduled.")
-                st.rerun()
-
-            if st.button("Manager Interview Passed", key="manager_interview_passed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Manager_Interview_Status": "Completed",
-                        "Manager_Interview_Outcome": "Pass",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Manager interview marked as passed.")
-                st.rerun()
-
-            if st.button("Manager Interview Failed", key="manager_interview_failed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Manager_Interview_Status": "Completed",
-                        "Manager_Interview_Outcome": "Fail",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Manager interview marked as failed.")
-                st.rerun()
-
-        st.write("### Final Stage Controls")
-
-        col_d, col_e, col_f = st.columns(3)
-
-        with col_d:
-            if st.button("Final HR Scheduled", key="final_hr_scheduled"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Final_HR_Status",
-                    "Scheduled",
-                )
-                st.session_state[state_key] = updated
-                st.success("Final HR marked as scheduled.")
-                st.rerun()
-
-            if st.button("Final HR Passed", key="final_hr_passed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Final_HR_Status": "Completed",
-                        "Final_HR_Outcome": "Pass",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Final HR marked as passed.")
-                st.rerun()
-
-            if st.button("Final HR Failed", key="final_hr_failed"):
-                updated = update_multiple_fields(
-                    pipeline_df,
-                    selected_candidate,
-                    {
-                        "Final_HR_Status": "Completed",
-                        "Final_HR_Outcome": "Fail",
-                    },
-                )
-                st.session_state[state_key] = updated
-                st.success("Final HR marked as failed.")
-                st.rerun()
-
-        with col_e:
-            if st.button("Offer Drafted", key="offer_drafted"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Offer_Status",
-                    "Draft",
-                )
-                st.session_state[state_key] = updated
-                st.success("Offer marked as drafted.")
-                st.rerun()
-
-            if st.button("Offer Sent", key="offer_sent"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Offer_Status",
-                    "Sent",
-                )
-                st.session_state[state_key] = updated
-                st.success("Offer marked as sent.")
-                st.rerun()
-
-        with col_f:
-            if st.button("Offer Accepted", key="offer_accepted"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Offer_Decision",
-                    "Accepted",
-                )
-                st.session_state[state_key] = updated
-                st.success("Offer marked as accepted.")
-                st.rerun()
-
-            if st.button("Offer Declined", key="offer_declined"):
-                updated = update_candidate_field(
-                    pipeline_df,
-                    selected_candidate,
-                    "Offer_Decision",
-                    "Declined",
-                )
-                st.session_state[state_key] = updated
-                st.success("Offer marked as declined.")
-                st.rerun()
+        refreshed_row = st.session_state[state_key][st.session_state[state_key]["Name"] == selected_candidate].iloc[0]
 
         st.write("### Selected Candidate Message")
-        refreshed_row = st.session_state[state_key][st.session_state[state_key]["Name"] == selected_candidate].iloc[0]
         st.write(refreshed_row.get("Stage_Message", ""))
 
         st.write("### Selected Candidate Recruiter Note")
@@ -545,29 +550,19 @@ with tab3:
             "Recruiter_Note",
         ]
         existing_message_cols = [c for c in message_cols if c in pipeline_df.columns]
-        st.dataframe(pipeline_df[existing_message_cols], use_container_width=True)
+        st.dataframe(st.session_state[state_key][existing_message_cols], use_container_width=True)
 
         st.write("### Pipeline Detail")
         detail_cols = [
-            "Name",
-            "Role",
-            "Decision",
-            "Current_Stage",
-            "Assessment_Status",
-            "Assessment_Result",
-            "Cognitive_Test_Status",
-            "Personality_Test_Status",
-            "Recruiter_Call_Status",
-            "Recruiter_Call_Outcome",
-            "Manager_Interview_Status",
-            "Manager_Interview_Outcome",
-            "Final_HR_Status",
-            "Final_HR_Outcome",
-            "Offer_Status",
-            "Offer_Decision",
-            "Workflow_Next_Action",
-            "Workflow_Blocker",
+            "Name", "Role", "Decision", "Current_Stage",
+            "Assessment_Status", "Assessment_Result",
+            "Cognitive_Test_Status", "Personality_Test_Status",
+            "Recruiter_Call_Status", "Recruiter_Call_Outcome",
+            "Manager_Interview_Status", "Manager_Interview_Outcome",
+            "Final_HR_Status", "Final_HR_Outcome",
+            "Offer_Status", "Offer_Decision",
+            "Workflow_Next_Action", "Workflow_Blocker",
             "Last_Workflow_Event",
         ]
         existing_detail_cols = [c for c in detail_cols if c in pipeline_df.columns]
-        st.dataframe(pipeline_df[existing_detail_cols], use_container_width=True)
+        st.dataframe(st.session_state[state_key][existing_detail_cols], use_container_width=True)
