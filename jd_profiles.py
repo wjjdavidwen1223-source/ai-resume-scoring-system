@@ -43,7 +43,6 @@ BANK_ROLE_PROFILES = {
             "operational accuracy",
         ],
     },
-
     "chase_associate_banker": {
         "label": "Chase Associate Banker",
         "company": "Chase",
@@ -87,7 +86,6 @@ BANK_ROLE_PROFILES = {
             "trusted relationship building",
         ],
     },
-
     "generic_retail_banker": {
         "label": "Generic Retail Banker",
         "company": "Generic Bank",
