@@ -8,9 +8,12 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     text_parts = []
 
     for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text_parts.append(page_text)
+        try:
+            page_text = page.extract_text()
+            if page_text:
+                text_parts.append(page_text)
+        except Exception:
+            continue
 
     return "\n".join(text_parts).strip()
 
@@ -19,10 +22,6 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
     doc = Document(BytesIO(file_bytes))
     paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
     return "\n".join(paragraphs).strip()
-
-
-def extract_text_from_txt(file_bytes: bytes) -> str:
-    return file_bytes.decode("utf-8", errors="ignore").strip()
 
 
 def extract_text_from_uploaded_file(uploaded_file) -> str:
@@ -36,6 +35,9 @@ def extract_text_from_uploaded_file(uploaded_file) -> str:
         return extract_text_from_docx(file_bytes)
 
     if filename.endswith(".txt"):
-        return extract_text_from_txt(file_bytes)
+        try:
+            return file_bytes.decode("utf-8")
+        except Exception:
+            return file_bytes.decode("latin-1")
 
     raise ValueError("Unsupported file type. Please upload a PDF, DOCX, or TXT file.")
