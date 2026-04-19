@@ -1,4 +1,4 @@
-# 🚀 Resume Ranking and Recruiting Decision System
+# 🚀 AI-Powered Decision System for Workflow Optimization
 
 ## 📌 Overview
 This project is a Python-based system that evaluates candidate-job fit by transforming unstructured resume data into a structured scoring framework.
