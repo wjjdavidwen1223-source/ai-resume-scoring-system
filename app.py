@@ -19,19 +19,10 @@ st.caption(
 )
 
 st.markdown("""
-This app is designed for screening banking branch roles such as:
-
-- BoA Relationship Banker
-- Chase Associate Banker
-- Generic Retail Banker / Universal Banker
-
-Core capabilities:
-- batch candidate screening from CSV
-- single resume PDF/DOCX/TXT screening
-- experience signal extraction
-- one-line experience summaries
-- JD-specific match scoring
-- recruiter workflow recommendations
+Supports:
+- BoA Relationship Banker  
+- Chase Associate Banker  
+- Generic Retail Banker / Universal Banker  
 """)
 
 profile_key = st.selectbox(
