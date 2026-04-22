@@ -314,3 +314,14 @@ This project demonstrates:
 
 ## 📌 Demo
 See `resume_scoring.py` for a sample implementation and output.
+
+---
+
+## 🔍 API Demo
+
+### Swagger UI
+![Swagger UI](<img width="2508" height="1236" alt="image" src="https://github.com/user-attachments/assets/3437030a-5259-4be1-a662-d46546a23146" />
+)
+
+### Example Output
+![Result](your_result.png)
