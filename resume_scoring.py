@@ -1,5 +1,5 @@
 import pandas as pd
-from jd_profiles import BANK_ROLE_PROFILES
+from jd_profiles import HEALTHCARE_ROLE_PROFILES
 
 
 def safe_float(value, default=0):
@@ -21,11 +21,11 @@ def score_education(education: str) -> int:
 
     education = str(education).strip().lower()
 
-    if "master" in education:
+    if "master" in education or "msn" in education:
         return 3
-    if "bachelor" in education:
+    if "bachelor" in education or "bsn" in education:
         return 2
-    if "associate" in education:
+    if "associate" in education or "adn" in education:
         return 1
     if "high school" in education or "ged" in education or "diploma" in education:
         return 1
@@ -39,24 +39,60 @@ def prettify_signal(signal: str) -> str:
 
 def build_signal_map(row):
     skills = str(row.get("Skills", "")).lower()
+    certs = str(row.get("Certifications", "")).lower()
+    experience = str(row.get("Experience_Summaries", "")).lower()
 
     return {
-        "client_service": safe_float(row.get("Customer_Service_Years", 0)) >= 1,
-        "communication": "communication" in skills,
-        "relationship_building": bool_flag(row.get("Relationship_Flag", "No")),
-        "sales": safe_float(row.get("Sales_Years", 0)) >= 1,
-        "banking_experience": str(row.get("Banking_Experience", "No")).strip().lower() == "yes",
-        "cash_handling": safe_float(row.get("Cash_Handling_Years", 0)) >= 1,
-        "digital_banking_education": bool_flag(row.get("Digital_Banking_Flag", "No")),
-        "operations": bool_flag(row.get("Operations_Flag", "No")),
-        "problem_solving": bool_flag(row.get("Problem_Solving_Flag", "No")),
-        "adaptability": bool_flag(row.get("Adaptability_Flag", "No")),
+        "rn_license": (
+            "rn" in certs
+            or "registered nurse" in certs
+            or bool_flag(row.get("RN_License_Flag", "No"))
+        ),
+        "bls_acls": (
+            "bls" in certs
+            or "acls" in certs
+            or bool_flag(row.get("BLS_ACLS_Flag", "No"))
+        ),
+        "clinical_experience": safe_float(row.get("Clinical_Years", 0)) >= 1,
+        "hospital_experience": (
+            "hospital" in experience
+            or "icu" in experience
+            or "er" in experience
+            or "emergency" in experience
+            or bool_flag(row.get("Hospital_Experience_Flag", "No"))
+        ),
+        "patient_care": (
+            "patient care" in skills
+            or "triage" in skills
+            or bool_flag(row.get("Patient_Care_Flag", "No"))
+        ),
+        "emr_systems": (
+            "epic" in skills
+            or "cerner" in skills
+            or "emr" in skills
+            or "ehr" in skills
+            or bool_flag(row.get("EMR_Flag", "No"))
+        ),
+        "hipaa_compliance": (
+            "hipaa" in skills
+            or "compliance" in skills
+            or bool_flag(row.get("HIPAA_Flag", "No"))
+        ),
+        "communication": (
+            "communication" in skills
+            or bool_flag(row.get("Communication_Flag", "No"))
+        ),
+        "teamwork": (
+            "team" in skills
+            or "collaboration" in skills
+            or bool_flag(row.get("Teamwork_Flag", "No"))
+        ),
         "education": score_education(row.get("Education", "")) >= 1,
     }
 
 
 def score_candidate_against_profile(row, profile_key: str):
-    profile = BANK_ROLE_PROFILES[profile_key]
+    profile = HEALTHCARE_ROLE_PROFILES[profile_key]
     weights = profile["weights"]
     signal_map = build_signal_map(row)
 
@@ -93,7 +129,7 @@ def score_candidate_against_profile(row, profile_key: str):
 
 
 def decision_from_profile_score(score, profile_key, signal_map):
-    profile = BANK_ROLE_PROFILES[profile_key]
+    profile = HEALTHCARE_ROLE_PROFILES[profile_key]
     must_have_signals = profile["must_have_signals"]
 
     must_have_hits = sum(1 for signal in must_have_signals if signal_map.get(signal, False))
@@ -144,11 +180,11 @@ def follow_up_due(days_in_pipeline, decision):
 
 def next_action(decision, follow_up_due_flag):
     if decision == "Interview":
-        return "Send candidate to next step"
+        return "Send candidate to next clinical interview step"
     if decision == "Hold" and follow_up_due_flag:
         return "Send pipeline update"
     if decision == "Hold":
-        return "Review later / compare against pool"
+        return "Review later / compare against candidate pool"
     return "Send rejection note"
 
 
@@ -162,26 +198,52 @@ def priority_level(decision, score, interview_threshold):
     return "Low"
 
 
+def build_risk_flags(signal_map):
+    flags = []
+
+    if not signal_map.get("rn_license"):
+        flags.append("❗ Missing RN license")
+
+    if not signal_map.get("clinical_experience"):
+        flags.append("❗ Limited clinical experience")
+
+    if not signal_map.get("bls_acls"):
+        flags.append("⚠️ Missing BLS/ACLS certification")
+
+    if not signal_map.get("hospital_experience"):
+        flags.append("⚠️ Limited hospital experience")
+
+    if not signal_map.get("hipaa_compliance"):
+        flags.append("⚠️ No HIPAA/compliance signal")
+
+    return ", ".join(flags) if flags else "No major risk flags"
+
+
 def build_reason_and_improvement(row, profile_key, matched_signals, missing_signals, decision):
-    profile = BANK_ROLE_PROFILES[profile_key]
+    profile = HEALTHCARE_ROLE_PROFILES[profile_key]
     role_label = profile["label"]
 
     strong = [prettify_signal(s) for s in matched_signals[:5]]
     weak = [prettify_signal(s) for s in missing_signals[:5]]
 
-    customer_years = safe_float(row.get("Customer_Service_Years", 0))
-    sales_years = safe_float(row.get("Sales_Years", 0))
-    cash_years = safe_float(row.get("Cash_Handling_Years", 0))
-    banking_exp = str(row.get("Banking_Experience", "No")).strip().lower() == "yes"
+    clinical_years = safe_float(row.get("Clinical_Years", 0))
+    certs = str(row.get("Certifications", "")).lower()
+    skills = str(row.get("Skills", "")).lower()
+    experience = str(row.get("Experience_Summaries", "")).lower()
+
+    has_rn = "rn" in certs or "registered nurse" in certs or bool_flag(row.get("RN_License_Flag", "No"))
+    has_bls_acls = "bls" in certs or "acls" in certs or bool_flag(row.get("BLS_ACLS_Flag", "No"))
+    has_emr = "epic" in skills or "cerner" in skills or "emr" in skills or "ehr" in skills
+    has_hospital = "hospital" in experience or "icu" in experience or "er" in experience
 
     if decision == "Interview":
         reason = (
             f"Strong fit for {role_label}. Clear evidence across "
-            f"{', '.join(strong) if strong else 'key role signals'}, "
-            f"with role-relevant experience aligned to screening thresholds."
+            f"{', '.join(strong) if strong else 'key healthcare role signals'}, "
+            f"with clinical background aligned to screening thresholds."
         )
         improvement = (
-            "Keep quantified achievements, client-facing examples, and banking-related language visible."
+            "Keep certifications, patient-care examples, EMR experience, and clinical outcomes clearly visible."
         )
         return reason, improvement
 
@@ -196,25 +258,29 @@ def build_reason_and_improvement(row, profile_key, matched_signals, missing_sign
         reason = f"Partial fit for {role_label}. " + " ".join(parts) if parts else f"Partial fit for {role_label}."
 
         improvement_items = []
-        if customer_years < 1:
-            improvement_items.append("customer-facing experience")
-        if sales_years < 1:
-            improvement_items.append("sales or referral evidence")
-        if cash_years < 1:
-            improvement_items.append("cash handling evidence")
-        if not banking_exp:
-            improvement_items.append("banking or financial-services context")
+
+        if not has_rn:
+            improvement_items.append("RN license or nursing credential")
+        if not has_bls_acls:
+            improvement_items.append("BLS/ACLS certification")
+        if clinical_years < 1:
+            improvement_items.append("clinical experience")
+        if not has_hospital:
+            improvement_items.append("hospital, ICU, ER, or inpatient experience")
+        if not has_emr:
+            improvement_items.append("EMR/EHR systems such as Epic or Cerner")
+
         if not improvement_items and weak:
             improvement_items.extend([w.lower() for w in weak[:3]])
 
         improvement = (
             "Strengthen evidence for " + ", ".join(improvement_items[:4]) + "."
             if improvement_items else
-            "Strengthen role alignment with clearer banking-related signals."
+            "Strengthen healthcare role alignment with clearer clinical examples."
         )
         return reason, improvement
 
-    missing_core = [w.lower() for w in weak[:4]] if weak else ["multiple core requirements"]
+    missing_core = [w.lower() for w in weak[:4]] if weak else ["multiple core healthcare requirements"]
 
     reason = (
         f"Currently below target match for {role_label}. Missing stronger evidence in "
@@ -222,17 +288,20 @@ def build_reason_and_improvement(row, profile_key, matched_signals, missing_sign
     )
 
     improvement_items = []
-    if customer_years < 1:
-        improvement_items.append("client-service experience")
-    if sales_years < 1:
-        improvement_items.append("sales or referral outcomes")
-    if cash_years < 1:
-        improvement_items.append("cash-handling responsibilities")
-    if not banking_exp:
-        improvement_items.append("banking, branch, or financial-services exposure")
+
+    if not has_rn:
+        improvement_items.append("RN license or required healthcare credential")
+    if not has_bls_acls:
+        improvement_items.append("BLS/ACLS certification")
+    if clinical_years < 1:
+        improvement_items.append("hands-on clinical experience")
+    if not has_hospital:
+        improvement_items.append("hospital or inpatient-care exposure")
+    if not has_emr:
+        improvement_items.append("EMR/EHR system experience")
 
     if not improvement_items:
-        improvement_items = ["role-specific achievements", "measurable impact", "clearer skill wording"]
+        improvement_items = ["clinical achievements", "patient-care impact", "clearer healthcare skill wording"]
 
     improvement = "Add clearer evidence for " + ", ".join(improvement_items[:4]) + "."
 
@@ -245,14 +314,14 @@ def generate_message(name, decision, role_label, next_step):
     if decision == "Interview":
         return (
             f"Hi {first_name}, thank you for your interest in the {role_label} role. "
-            f"We were impressed with your background and would like to move you forward. "
+            f"We were impressed with your clinical background and would like to move you forward. "
             f"Next step: {next_step}."
         )
 
     if decision == "Hold":
         return (
             f"Hi {first_name}, thank you for your interest in the {role_label} role. "
-            f"We appreciate your background and would like to keep your application under consideration "
+            f"We appreciate your healthcare experience and would like to keep your application under consideration "
             f"while we continue the review process."
         )
 
@@ -276,36 +345,41 @@ def build_score_breakdown_text(signal_breakdown: dict) -> str:
     return " | ".join(parts)
 
 
-def run_screening(df, profile_key="generic_retail_banker"):
+def run_screening(df, profile_key="registered_nurse"):
     result = df.copy()
-    profile = BANK_ROLE_PROFILES[profile_key]
+    profile = HEALTHCARE_ROLE_PROFILES[profile_key]
     role_label = profile["label"]
 
     defaults = {
         "Name": "",
         "Role": role_label,
-        "Sales_Years": 0,
-        "Customer_Service_Years": 0,
-        "Cash_Handling_Years": 0,
-        "Banking_Experience": "No",
+        "Certifications": "",
+        "Clinical_Years": 0,
         "Education": "",
         "Skills": "",
         "Days_In_Pipeline": 0,
         "Candidate_Response_Status": "No Response",
-        "Customer_Facing_Evidence": "",
-        "Sales_Evidence": "",
-        "Cash_Evidence": "",
-        "Banking_Evidence": "",
-        "Digital_Banking_Flag": "No",
-        "Digital_Banking_Evidence": "",
-        "Relationship_Flag": "No",
-        "Relationship_Evidence": "",
-        "Operations_Flag": "No",
-        "Operations_Evidence": "",
-        "Problem_Solving_Flag": "No",
-        "Problem_Solving_Evidence": "",
-        "Adaptability_Flag": "No",
-        "Adaptability_Evidence": "",
+
+        "RN_License_Flag": "No",
+        "RN_License_Evidence": "",
+        "BLS_ACLS_Flag": "No",
+        "BLS_ACLS_Evidence": "",
+
+        "Patient_Care_Flag": "No",
+        "Patient_Care_Evidence": "",
+        "Hospital_Experience_Flag": "No",
+        "Hospital_Experience_Evidence": "",
+
+        "EMR_Flag": "No",
+        "EMR_Evidence": "",
+        "HIPAA_Flag": "No",
+        "HIPAA_Evidence": "",
+
+        "Communication_Flag": "No",
+        "Communication_Evidence": "",
+        "Teamwork_Flag": "No",
+        "Teamwork_Evidence": "",
+
         "Experience_Summaries": "",
     }
 
@@ -355,6 +429,7 @@ def run_screening(df, profile_key="generic_retail_banker"):
             "Recruiter_Signal": recruiter_tag,
             "Reason": reason,
             "Improvement": improvement,
+            "Risk_Flags": build_risk_flags(signal_map),
             "Follow_Up_Due": follow_flag,
             "Next_Action": next_step,
             "Priority": priority,
