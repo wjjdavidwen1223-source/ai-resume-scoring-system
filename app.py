@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from jd_profiles import BANK_ROLE_PROFILES
+from jd_profiles import HEALTHCARE_ROLE_PROFILES
 from resume_parser import parse_resume_to_dataframe
 from resume_scoring import run_screening
 from file_parsers import extract_text_from_uploaded_file
@@ -9,42 +9,45 @@ from workflow_engine import apply_workflow_to_dataframe, stage_summary, action_q
 from communications import attach_messages
 
 
-st.set_page_config(page_title="AI Banking Recruiter Copilot", layout="wide")
+st.set_page_config(page_title="AI Healthcare Recruiter Copilot", layout="wide")
 
-st.title("AI Banking Recruiter Copilot")
+st.title("AI Healthcare Recruiter Copilot")
 
 st.markdown("""
 **Built by JiaJun (David) Wen (文家俊)**  
-End-to-end recruiting decision system for retail banking roles
+End-to-end recruiting decision system for healthcare and clinical roles
 """)
 
 st.caption(
-    "AI-driven resume screening, JD matching, workflow progression, and recruiter decision support for banking roles"
+    "AI-driven resume screening, JD matching, workflow progression, and recruiter decision support for healthcare roles"
 )
 
 st.markdown("""
 Supports:
-- BoA Relationship Banker  
-- Chase Associate Banker  
-- Generic Retail Banker / Universal Banker  
+- Registered Nurse (RN)  
+- Medical Assistant  
+- Clinical Research Coordinator  
 """)
 
 profile_key = st.selectbox(
-    "Select target job profile",
-    options=list(BANK_ROLE_PROFILES.keys()),
-    format_func=lambda x: BANK_ROLE_PROFILES[x]["label"],
+    "Select target healthcare job profile",
+    options=list(HEALTHCARE_ROLE_PROFILES.keys()),
+    format_func=lambda x: HEALTHCARE_ROLE_PROFILES[x]["label"],
 )
 
-selected_profile = BANK_ROLE_PROFILES[profile_key]
+selected_profile = HEALTHCARE_ROLE_PROFILES[profile_key]
 
 with st.expander("Selected JD profile details"):
     st.write("**Role:**", selected_profile["label"])
     st.write("**Company:**", selected_profile["company"])
     st.write("**Job family:**", selected_profile["job_family"])
+    st.write("**Minimum education:**", selected_profile["min_education"])
     st.write("**Must-have signals:**", ", ".join(selected_profile["must_have_signals"]))
     st.write("**Preferred signals:**", ", ".join(selected_profile["preferred_signals"]))
     st.write("**Interview threshold:**", selected_profile["interview_threshold"])
     st.write("**Hold threshold:**", selected_profile["hold_threshold"])
+    st.write("**Assessment required:**", selected_profile["assessment_required"])
+    st.write("**Assessment types:**", ", ".join(selected_profile["assessment_types"]))
     st.write("**Target outcomes:**", ", ".join(selected_profile["target_outcomes"]))
 
 tab1, tab2, tab3 = st.tabs([
@@ -98,14 +101,22 @@ def reset_candidate_workflow_by_index(df: pd.DataFrame, row_idx: int):
         "Assessment_Result": "Pending",
         "Cognitive_Test_Status": "Not Sent",
         "Personality_Test_Status": "Not Sent",
+        "Clinical_Judgment_Status": "Not Sent",
+        "Patient_Care_Scenario_Status": "Not Sent",
+        "Compliance_Check_Status": "Not Sent",
         "Cognitive_Score": "",
         "Personality_Match": "",
+        "Clinical_Judgment_Score": "",
+        "Compliance_Check_Result": "",
         "Recruiter_Call_Status": "Not Scheduled",
         "Recruiter_Call_Outcome": "Pending",
         "Recruiter_Notes": "",
         "Manager_Interview_Status": "Not Scheduled",
         "Manager_Interview_Outcome": "Pending",
         "Manager_Feedback": "",
+        "Clinical_Interview_Status": "Not Scheduled",
+        "Clinical_Interview_Outcome": "Pending",
+        "Clinical_Feedback": "",
         "Interview_Debrief_Status": "Pending",
         "Final_HR_Status": "Not Started",
         "Final_HR_Outcome": "Pending",
@@ -132,7 +143,7 @@ def render_stage_timeline(current_stage: str):
         "Assessment Completed",
         "Assessment Passed",
         "Recruiter Phone Screen",
-        "Hiring Manager Interview",
+        "Clinical / Hiring Manager Interview",
         "Final HR Call",
         "Offer",
         "Hired",
@@ -147,7 +158,10 @@ def render_stage_timeline(current_stage: str):
     try:
         stage_index = pipeline_flow.index(current_stage)
     except ValueError:
-        stage_index = 0
+        if current_stage == "Hiring Manager Interview":
+            stage_index = pipeline_flow.index("Clinical / Hiring Manager Interview")
+        else:
+            stage_index = 0
 
     cols = st.columns(len(pipeline_flow))
 
@@ -193,6 +207,9 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
                     {
                         "Cognitive_Test_Status": "Completed",
                         "Personality_Test_Status": "Completed",
+                        "Clinical_Judgment_Status": "Completed",
+                        "Patient_Care_Scenario_Status": "Completed",
+                        "Compliance_Check_Status": "Completed",
                     },
                 )
                 st.session_state[state_key] = updated
@@ -224,7 +241,7 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
         recruiter_status = str(row.get("Recruiter_Call_Status", "")).strip()
 
         if recruiter_status in {"Not Scheduled", "To Schedule"}:
-            if st.button("Schedule Recruiter Call", key=f"{scope}_{state_key}_recruiter_schedule_{row_idx}"):
+            if st.button("Schedule Recruiter Phone Screen", key=f"{scope}_{state_key}_recruiter_schedule_{row_idx}"):
                 updated = update_candidate_field_by_index(df, row_idx, "Recruiter_Call_Status", "Scheduled")
                 st.session_state[state_key] = updated
                 st.rerun()
@@ -233,7 +250,7 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
         if recruiter_status == "Scheduled":
             c1, c2, c3 = st.columns(3)
             with c1:
-                if st.button("Mark Recruiter Call Passed", key=f"{scope}_{state_key}_recruiter_pass_{row_idx}"):
+                if st.button("Mark Recruiter Screen Passed", key=f"{scope}_{state_key}_recruiter_pass_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
@@ -246,7 +263,7 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
                     st.rerun()
 
             with c2:
-                if st.button("Mark Recruiter Call Hold", key=f"{scope}_{state_key}_recruiter_hold_{row_idx}"):
+                if st.button("Mark Recruiter Screen Hold", key=f"{scope}_{state_key}_recruiter_hold_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
@@ -259,7 +276,7 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
                     st.rerun()
 
             with c3:
-                if st.button("Mark Recruiter Call Failed", key=f"{scope}_{state_key}_recruiter_fail_{row_idx}"):
+                if st.button("Mark Recruiter Screen Failed", key=f"{scope}_{state_key}_recruiter_fail_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
@@ -272,11 +289,11 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
                     st.rerun()
             return
 
-    if stage == "Hiring Manager Interview":
+    if stage in {"Hiring Manager Interview", "Clinical / Hiring Manager Interview"}:
         manager_status = str(row.get("Manager_Interview_Status", "")).strip()
 
         if manager_status in {"Not Scheduled", "To Schedule"}:
-            if st.button("Schedule Manager Interview", key=f"{scope}_{state_key}_manager_schedule_{row_idx}"):
+            if st.button("Schedule Clinical / Hiring Manager Interview", key=f"{scope}_{state_key}_manager_schedule_{row_idx}"):
                 updated = update_candidate_field_by_index(df, row_idx, "Manager_Interview_Status", "Scheduled")
                 st.session_state[state_key] = updated
                 st.rerun()
@@ -285,39 +302,45 @@ def render_dynamic_stage_controls(df: pd.DataFrame, row_idx: int, state_key: str
         if manager_status == "Scheduled":
             c1, c2, c3 = st.columns(3)
             with c1:
-                if st.button("Mark Manager Interview Passed", key=f"{scope}_{state_key}_manager_pass_{row_idx}"):
+                if st.button("Mark Clinical Interview Passed", key=f"{scope}_{state_key}_manager_pass_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
                         {
                             "Manager_Interview_Status": "Completed",
                             "Manager_Interview_Outcome": "Pass",
+                            "Clinical_Interview_Status": "Completed",
+                            "Clinical_Interview_Outcome": "Pass",
                         },
                     )
                     st.session_state[state_key] = updated
                     st.rerun()
 
             with c2:
-                if st.button("Mark Manager Interview Hold", key=f"{scope}_{state_key}_manager_hold_{row_idx}"):
+                if st.button("Mark Clinical Interview Hold", key=f"{scope}_{state_key}_manager_hold_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
                         {
                             "Manager_Interview_Status": "Completed",
                             "Manager_Interview_Outcome": "Hold",
+                            "Clinical_Interview_Status": "Completed",
+                            "Clinical_Interview_Outcome": "Hold",
                         },
                     )
                     st.session_state[state_key] = updated
                     st.rerun()
 
             with c3:
-                if st.button("Mark Manager Interview Failed", key=f"{scope}_{state_key}_manager_fail_{row_idx}"):
+                if st.button("Mark Clinical Interview Failed", key=f"{scope}_{state_key}_manager_fail_{row_idx}"):
                     updated = update_multiple_fields_by_index(
                         df,
                         row_idx,
                         {
                             "Manager_Interview_Status": "Completed",
                             "Manager_Interview_Outcome": "Fail",
+                            "Clinical_Interview_Status": "Completed",
+                            "Clinical_Interview_Outcome": "Fail",
                         },
                     )
                     st.session_state[state_key] = updated
@@ -425,7 +448,7 @@ with tab1:
     st.subheader("Batch Candidate Screening")
 
     uploaded_csv = st.file_uploader(
-        "Upload candidate CSV",
+        "Upload healthcare candidate CSV",
         type=["csv"],
         key="csv_uploader",
     )
@@ -435,7 +458,7 @@ with tab1:
         st.write("### Input Data")
         st.dataframe(df, use_container_width=True)
 
-        if st.button("Run Banking Screening Workflow", key="run_csv_workflow"):
+        if st.button("Run Healthcare Screening Workflow", key="run_csv_workflow"):
             screened = run_screening(df, profile_key=profile_key)
             screened = refresh_pipeline(screened)
             st.session_state["batch_results"] = screened
@@ -475,7 +498,7 @@ with tab1:
         top_candidate_cols = [
             "Name", "Role", "Score", "Max_Score", "Match_Score_%",
             "Decision", "Current_Stage", "Stage_Badge",
-            "Matched_Signals", "Reason", "Experience_Summaries",
+            "Matched_Signals", "Risk_Flags", "Reason", "Experience_Summaries",
         ]
         existing_top_cols = [c for c in top_candidate_cols if c in batch_results.columns]
         st.write("### Top Candidates")
@@ -485,6 +508,7 @@ with tab1:
             "Name", "Role", "Score", "Match_Score_%",
             "Decision", "Priority", "Current_Stage",
             "Workflow_Next_Action", "Workflow_Blocker", "Recruiter_Signal",
+            "Risk_Flags",
         ]
         existing_queue_cols = [c for c in recruiter_queue_cols if c in batch_results.columns]
         st.write("### Recruiter Queue")
@@ -497,7 +521,7 @@ with tab1:
         st.download_button(
             label="Download Results as CSV",
             data=csv_output,
-            file_name="banking_screening_results.csv",
+            file_name="healthcare_screening_results.csv",
             mime="text/csv",
         )
 
@@ -506,7 +530,7 @@ with tab2:
     st.subheader("Single Resume Screening")
 
     uploaded_resume = st.file_uploader(
-        "Upload one candidate resume (.pdf, .docx, .txt)",
+        "Upload one healthcare candidate resume (.pdf, .docx, .txt)",
         type=["pdf", "docx", "txt"],
         key="resume_uploader",
     )
@@ -517,7 +541,7 @@ with tab2:
             st.write("### Extracted Resume Text")
             st.text_area("Resume Preview", extracted_text[:6000], height=260)
 
-            if st.button("Analyze This Resume", key="analyze_resume"):
+            if st.button("Analyze This Healthcare Resume", key="analyze_resume"):
                 parsed_df = parse_resume_to_dataframe(
                     extracted_text,
                     role=selected_profile["label"],
@@ -552,6 +576,7 @@ with tab2:
         st.write("**Workflow Blocker:**", row.get("Workflow_Blocker", ""))
         st.write("**Reason:**", row["Reason"])
         st.write("**Improvement:**", row["Improvement"])
+        st.write("**Risk Flags:**", row.get("Risk_Flags", ""))
         st.write("**Matched Signals:**", row["Matched_Signals"])
         st.write("**Missing Signals:**", row["Missing_Signals"])
         st.write("**Score Breakdown:**", row.get("Score_Breakdown", ""))
@@ -563,15 +588,14 @@ with tab2:
                 st.write(f"**Experience {i}:** {summary}")
 
         st.write("### Evidence Detected")
-        st.write("**Customer-Facing Evidence:**", row.get("Customer_Facing_Evidence", ""))
-        st.write("**Sales Evidence:**", row.get("Sales_Evidence", ""))
-        st.write("**Cash Handling Evidence:**", row.get("Cash_Evidence", ""))
-        st.write("**Banking Evidence:**", row.get("Banking_Evidence", ""))
-        st.write("**Digital Banking Evidence:**", row.get("Digital_Banking_Evidence", ""))
-        st.write("**Relationship Evidence:**", row.get("Relationship_Evidence", ""))
-        st.write("**Operations Evidence:**", row.get("Operations_Evidence", ""))
-        st.write("**Problem Solving Evidence:**", row.get("Problem_Solving_Evidence", ""))
-        st.write("**Adaptability Evidence:**", row.get("Adaptability_Evidence", ""))
+        st.write("**RN License Evidence:**", row.get("RN_License_Evidence", ""))
+        st.write("**BLS / ACLS Evidence:**", row.get("BLS_ACLS_Evidence", ""))
+        st.write("**Patient Care Evidence:**", row.get("Patient_Care_Evidence", ""))
+        st.write("**Hospital Experience Evidence:**", row.get("Hospital_Experience_Evidence", ""))
+        st.write("**EMR / EHR Evidence:**", row.get("EMR_Evidence", ""))
+        st.write("**HIPAA / Compliance Evidence:**", row.get("HIPAA_Evidence", ""))
+        st.write("**Communication Evidence:**", row.get("Communication_Evidence", ""))
+        st.write("**Teamwork Evidence:**", row.get("Teamwork_Evidence", ""))
 
         st.write("### Candidate Message")
         st.write(row.get("Stage_Message", ""))
@@ -676,8 +700,11 @@ with tab3:
             "Name", "Role", "Decision", "Current_Stage",
             "Assessment_Status", "Assessment_Result",
             "Cognitive_Test_Status", "Personality_Test_Status",
+            "Clinical_Judgment_Status", "Patient_Care_Scenario_Status",
+            "Compliance_Check_Status",
             "Recruiter_Call_Status", "Recruiter_Call_Outcome",
             "Manager_Interview_Status", "Manager_Interview_Outcome",
+            "Clinical_Interview_Status", "Clinical_Interview_Outcome",
             "Final_HR_Status", "Final_HR_Outcome",
             "Offer_Status", "Offer_Decision",
             "Workflow_Next_Action", "Workflow_Blocker",
