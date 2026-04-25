@@ -45,7 +45,6 @@ HEALTHCARE_ROLE_PROFILES = {
             "HIPAA-aware workflow",
         ],
     },
-
     "medical_assistant": {
         "label": "Medical Assistant",
         "company": "Generic Healthcare Provider",
@@ -89,7 +88,6 @@ HEALTHCARE_ROLE_PROFILES = {
             "patient communication",
         ],
     },
-
     "clinical_research_coordinator": {
         "label": "Clinical Research Coordinator",
         "company": "Generic Healthcare / Research Organization",
@@ -132,10 +130,6 @@ HEALTHCARE_ROLE_PROFILES = {
             "research documentation",
             "regulatory compliance",
             "cross-functional coordination",
-        ],
-    },
-}
-            "relationship development",
         ],
     },
 }
